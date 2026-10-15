@@ -1,5 +1,8 @@
-// The CDN bundle installs this runtime inside the storefront's isolated document.
+import { directTransport } from "./direct";
+
+// One public SDK supports direct HTML documents and the existing isolated bridge.
 export function installSdk() {
+  const direct = directTransport();
   let port: MessagePort;
   const session = Math.random().toString(36).slice(2) + Date.now().toString(36);
   let sequence = 0;
@@ -15,8 +18,10 @@ export function installSdk() {
   const ready = new Promise((resolve) => {
     initialize = resolve;
   });
+  if (direct) initialize!(direct.context);
   // srcdoc fragment URLs resolve against the storefront URL, so handle them within this document.
   document.addEventListener("click", (event) => {
+    if (direct) return;
     const link =
       event.target instanceof Element ? event.target.closest("a[href]") : null;
     const href = link?.getAttribute("href");
@@ -116,6 +121,7 @@ export function installSdk() {
     },
   };
   window.addEventListener("message", (event) => {
+    if (direct) return;
     if (event.source !== parent) return;
     if (event.data?.type === "storesdz-sdk-ping") {
       parent.postMessage({ type: "storesdz-sdk-ready", session }, "*");
@@ -145,6 +151,7 @@ export function installSdk() {
     initialize(event.data.context);
   });
   async function call(method: string, input: unknown = {}) {
+    if (direct) return direct.call(method, input);
     await ready;
     if (pending.size >= 8)
       throw Object.assign(new Error("Too many pending SDK requests."), {
@@ -216,5 +223,5 @@ export function installSdk() {
       },
     }),
   });
-  parent.postMessage({ type: "storesdz-sdk-ready", session }, "*");
+  if (!direct) parent.postMessage({ type: "storesdz-sdk-ready", session }, "*");
 }
