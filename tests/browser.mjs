@@ -12,6 +12,40 @@ const server = createServer((request, response) => {
     response.end(sdk);
     return;
   }
+  if (request.url.startsWith("/api/storefront/v1/funnels/offer/sdk/")) {
+    assert.equal(request.method, "POST");
+    assert.equal(request.headers.cookie, undefined);
+    assert.equal(request.headers.authorization, undefined);
+    response.writeHead(200, {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    });
+    response.end(
+      JSON.stringify({
+        ok: true,
+        data: request.url.endsWith("/checkout")
+          ? { number: "FAKE-DIRECT" }
+          : { subtotal: "100" },
+      }),
+    );
+    return;
+  }
+  if (request.url === "/store") {
+    response.writeHead(200, { "Content-Type": "text/html" });
+    response.end("<h1>Main router placeholder</h1>");
+    return;
+  }
+  if (request.url === "/direct") {
+    response.writeHead(200, {
+      "Content-Type": "text/html",
+      "Content-Security-Policy":
+        "default-src 'none'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'",
+    });
+    response.end(
+      '<!doctype html><script type="application/json" id="storesdz-funnel-context">{"slug":"offer","context":{"version":1,"store":{"name":"Direct fixture"}}}</script><script src="/sdk.js"></script><h1>Direct page</h1><a href="/store">Back to store</a>',
+    );
+    return;
+  }
   response.writeHead(200, { "Content-Type": "text/html" });
   const origin = `http://127.0.0.1:${server.address().port}`;
   const document = `<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${origin}; connect-src 'none'; base-uri 'none'; form-action 'none'"><script src="${origin}/sdk.js"></script><a href="#order">Order</a><section id="order">Form placeholder</section>`;
@@ -96,8 +130,32 @@ try {
   assert.equal(page.frames().length, 2);
   assert.equal(await frame.evaluate(() => Object.isFrozen(StoresDZ)), true);
   assert.deepEqual(errors, []);
+  await page.goto(`http://127.0.0.1:${server.address().port}/direct`);
+  assert.equal(page.frames().length, 1);
+  assert.equal(
+    (await page.evaluate(() => StoresDZ.ready())).store.name,
+    "Direct fixture",
+  );
+  assert.equal(
+    (await page.evaluate(() => StoresDZ.quote({ quantity: 2 }))).subtotal,
+    "100",
+  );
+  assert.equal(
+    (await page.evaluate(() => StoresDZ.checkout({}))).number,
+    "FAKE-DIRECT",
+  );
+  assert.equal(
+    await page.evaluate(() =>
+      StoresDZ.checkout({}).catch((error) => error.code),
+    ),
+    "ORDER_CONFIRMED",
+  );
+  await page.getByRole("link", { name: "Back to store" }).click();
+  await page.waitForURL(`http://127.0.0.1:${server.address().port}/store`);
+  assert.equal(await page.locator("h1").innerText(), "Main router placeholder");
+  assert.deepEqual(errors, []);
   console.log(
-    "PASS: compiled SDK, browser bridge, sandbox isolation, and fragment navigation (fake host only).",
+    "PASS: compiled SDK, isolated bridge, direct HTTP transport, duplicate checkout protection and hard navigation (fake host only).",
   );
 } finally {
   await browser?.close();

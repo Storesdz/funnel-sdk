@@ -1,28 +1,37 @@
 # StoresDZ funnel SDK
 
 The standalone browser runtime for merchant-built StoresDZ funnel pages.
-It runs inside the storefront's sandboxed iframe and calls the host's validated
-commerce bridge. Loading this file on another website does not grant checkout
-access. Store credentials, product identity, authoritative prices, funnel
-attribution, and attempt IDs stay with the storefront and backend.
+It supports direct HTML pages from the Rust funnel server and the existing
+sandboxed iframe bridge. Direct pages receive a public JSON context and call the
+same-origin HTTP SDK endpoint. Product identity, current publication, authoritative
+prices, funnel attribution, terms, delivery and attempt IDs remain server-validated.
 
 ## CDN
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/Storesdz/funnel-sdk@v1.0.0/dist/storesdz-sdk.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/Storesdz/funnel-sdk@v1.1.0/dist/storesdz-sdk.min.js"></script>
 ```
 
 In storefrontnext set:
 
 ```text
-STOREFRONT_FUNNEL_SDK_URL=https://cdn.jsdelivr.net/gh/Storesdz/funnel-sdk@v1.0.0/dist/storesdz-sdk.min.js
+STOREFRONT_FUNNEL_SDK_URL=https://cdn.jsdelivr.net/gh/Storesdz/funnel-sdk@v1.1.0/dist/storesdz-sdk.min.js
 ```
 
 The storefront loads the script before merchant code; merchants do not need to
 add another script tag. Pin an exact release tag or commit. The bundle is
 minified with shortened identifiers, without source maps or runtime dependencies.
 Minification does not protect secrets. The public repository contains readable
-source; use this SDK only inside the supported sandbox and bridge.
+source. The Rust server also serves this exact pinned bundle at
+`/f/_assets/storesdz-sdk-v1.1.0.min.js`, cached for five minutes.
+
+Direct documents include a non-executable `script#storesdz-funnel-context` JSON
+block containing `{slug, context}` before the SDK script. With no parent frame,
+the SDK initializes immediately and posts to
+`/api/storefront/v1/funnels/{slug}/sdk/{quote|delivery|checkout}`. Requests omit
+cookies, cannot redirect and are never cached. Normal links perform full browser
+navigation back to the storefront router. Direct merchant scripts execute on the
+store's origin; only the legacy iframe mode provides sandbox origin isolation.
 
 ## API
 
