@@ -1,6 +1,6 @@
 {
   "name": "@storesdz/funnel-sdk",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Browser SDK for direct and isolated StoresDZ funnel pages",
   "main": "dist/storesdz-sdk.min.js",
   "jsdelivr": "dist/storesdz-sdk.min.js",

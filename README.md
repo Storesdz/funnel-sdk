@@ -9,13 +9,13 @@ prices, funnel attribution, terms, delivery and attempt IDs remain server-valida
 ## CDN
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/Storesdz/funnel-sdk@v1.1.0/dist/storesdz-sdk.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/Storesdz/funnel-sdk@v1.2.0/dist/storesdz-sdk.min.js"></script>
 ```
 
 In storefrontnext set:
 
 ```text
-STOREFRONT_FUNNEL_SDK_URL=https://cdn.jsdelivr.net/gh/Storesdz/funnel-sdk@v1.1.0/dist/storesdz-sdk.min.js
+STOREFRONT_FUNNEL_SDK_URL=https://cdn.jsdelivr.net/gh/Storesdz/funnel-sdk@v1.2.0/dist/storesdz-sdk.min.js
 ```
 
 The storefront loads the script before merchant code; merchants do not need to
@@ -23,7 +23,7 @@ add another script tag. Pin an exact release tag or commit. The bundle is
 minified with shortened identifiers, without source maps or runtime dependencies.
 Minification does not protect secrets. The public repository contains readable
 source. The Rust server also serves this exact pinned bundle at
-`/f/_assets/storesdz-sdk-v1.1.0.min.js`, cached for five minutes.
+`/f/_assets/storesdz-sdk-v1.2.0.min.js`, cached for five minutes.
 
 Direct documents include a non-executable `script#storesdz-funnel-context` JSON
 block containing `{slug, context}` before the SDK script. With no parent frame,

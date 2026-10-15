@@ -48,7 +48,22 @@ export function directTransport() {
         );
       let body: string;
       try {
-        body = JSON.stringify(input);
+        let analytics: unknown;
+        if (method === "checkout") {
+          try {
+            analytics = (
+              window as unknown as { StoresDZAnalytics?: () => unknown }
+            ).StoresDZAnalytics?.();
+          } catch {}
+        }
+        body = JSON.stringify(
+          analytics &&
+            input &&
+            typeof input === "object" &&
+            !Array.isArray(input)
+            ? { ...input, analytics }
+            : input,
+        );
       } catch {
         throw failure(
           "INVALID_REQUEST",

@@ -359,3 +359,23 @@ test("pinned libraries load scripts/styles and timed-out resources can be retrie
   resources.at(-1).onload();
   await retry;
 });
+test("direct checkout includes anonymous attribution and tolerates an unavailable provider", async () => {
+  const first = directRuntime();
+  const analytics = { visitorId: "v", sessionId: "s", utmSource: "campaign" };
+  Object.defineProperty(first.window, "StoresDZAnalytics", {
+    value: () => analytics,
+  });
+  await first.sdk.checkout({ customer: { name: "Fixture" } });
+  expect(JSON.parse(first.fetch.mock.calls[0][1].body as string)).toEqual({
+    customer: { name: "Fixture" },
+    analytics,
+  });
+  const second = directRuntime();
+  Object.defineProperty(second.window, "StoresDZAnalytics", {
+    value: () => {
+      throw new Error("storage blocked");
+    },
+  });
+  await second.sdk.checkout({});
+  expect(JSON.parse(second.fetch.mock.calls[0][1].body as string)).toEqual({});
+});
